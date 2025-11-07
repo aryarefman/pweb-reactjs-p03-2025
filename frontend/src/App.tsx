@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Book';
 import BooksList from './pages/Booklist';
+import TransactionsList from './pages/Transaction';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth(); // <-- 1. Ambil 'loading'
@@ -61,6 +62,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <BooksList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/Transactions"
+        element={
+          <ProtectedRoute>
+            <TransactionsList />
           </ProtectedRoute>
         }
       />
