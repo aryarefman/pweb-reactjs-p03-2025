@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import '../App.css';
+import './Register.css';
 
 export default function Register() {
   const [username, setUsername] = useState('');
