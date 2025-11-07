@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/useAuth';
-import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Home,
@@ -19,13 +19,14 @@ interface Book {
   writer: string;
   price: number;
   stock: number;
+  description?: string; 
 }
 
 function BooksList() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null); 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -85,9 +86,9 @@ function BooksList() {
           <div
             key={book.id}
             className="book-card"
-            onClick={() => navigate(`/books/${book.id}`)}
+            onClick={() => setSelectedBook(book)} // <-- JADI SEPERTI INI
             style={{ cursor: 'pointer' }}
-          >
+>
             <div className="book-image-wrapper">
               <BookOpen
                 size={48}
@@ -98,6 +99,9 @@ function BooksList() {
             <div className="book-content">
               <h3 className="book-title">{book.title}</h3>
               <div className="book-writer">{book.writer}</div>
+              <p className="book-description">
+                {book.description || 'Tidak ada deskripsi untuk buku ini.'}
+              </p>
               <div className="book-meta">
                 <div className="meta-badge price">
                   Rp {book.price.toLocaleString('id-ID')}
@@ -159,6 +163,43 @@ function BooksList() {
         </div>
         {content}
       </div>
+      {selectedBook && (
+    <div className="modal-backdrop" onClick={() => setSelectedBook(null)}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="modal-close-btn"
+          onClick={() => setSelectedBook(null)}
+        >
+          &times;
+        </button>
+
+        {/* Kita gunakan style dari halaman detail sebelumnya */}
+        <div className="book-detail-layout-modal">
+          <div className="book-detail-image-wrapper">
+            <BookOpen size={100} strokeWidth={1} />
+          </div>
+          <div className="book-detail-content">
+            <h1 className="book-detail-title">{selectedBook.title}</h1>
+            <h2 className="book-detail-writer">oleh {selectedBook.writer}</h2>
+
+            {/* Tampilkan deskripsi lengkap (tidak dipotong) */}
+            <h3 className="book-detail-section-title">Deskripsi</h3>
+            <p className="book-detail-description-modal">
+              {selectedBook.description || 'Tidak ada deskripsi untuk buku ini.'}
+            </p>
+
+            {/* Anda bisa tambahkan detail lain di sini jika ada di data */}
+            {/* <h3 className="book-detail-section-title">Detail Lainnya</h3>
+            <ul className="book-detail-list">
+              <li><strong>Penerbit:</strong> {selectedBook.publisher}</li>
+              <li><strong>Tahun Terbit:</strong> {selectedBook.publication_year}</li>
+            </ul>
+            */}
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
     </div>
   );
 }
