@@ -5,12 +5,14 @@ import {
   getBookDetail,
   getBooksByGenre,
   updateBook,
-  deleteBook
+  deleteBook,
+  getBookStats
 } from '../controllers/book.controller';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
+router.get('/stats', getBookStats);
 router.post('/', authenticateToken, createBook);
 router.get('/', getAllBooks);
 router.get('/genre/:genre_id', getBooksByGenre);

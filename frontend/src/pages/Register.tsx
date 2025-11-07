@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
@@ -11,36 +11,47 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+      // Validasi
+      if (!username.trim()) {
+        setError('Username is required');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
+      setLoading(true);
 
-    setLoading(true);
-
-    try {
-      await register(username, email, password);
-      alert('Registration successful! Please login.');
-      navigate('/login');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        await register(username, email, password);
+        alert('Registration successful! Please login.');
+        navigate('/login');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Registration failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [username, email, password, confirmPassword, register, navigate]
+  );
 
   return (
     <div className="auth-container">
@@ -48,58 +59,62 @@ export default function Register() {
         <h1>Register</h1>
         <p className="auth-subtitle">Create a new account to get started.</p>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="error-message" role="alert">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="reg-username">Username</label>
             <input
-              id="username"
+              id="reg-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="johndoe"
               required
               disabled={loading}
+              autoComplete="username"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="reg-email">Email</label>
             <input
-              id="email"
+              id="reg-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="you@example.com"
               required
               disabled={loading}
+              autoComplete="email"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="reg-password">Password</label>
             <input
-              id="password"
+              id="reg-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password (min. 6 characters)"
+              placeholder="Min. 6 characters"
               required
               disabled={loading}
+              autoComplete="new-password"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="reg-confirm">Confirm Password</label>
             <input
-              id="confirmPassword"
+              id="reg-confirm"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
+              placeholder="Retype password"
               required
               disabled={loading}
+              autoComplete="new-password"
             />
           </div>
 

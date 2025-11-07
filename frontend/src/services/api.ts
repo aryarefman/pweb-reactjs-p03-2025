@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const BASE_URL = 'http://localhost:3000'; 
 
 export interface RegisterData {
@@ -24,6 +25,13 @@ export interface AuthResponse {
     token: string;
   };
 }
+
+export interface BookStats {
+  totalBooks: number;
+  inStock: number;
+  genres: number;
+}
+
 function parseJwt(token: string) {
   try {
     return JSON.parse(atob(token.split('.')[1]));
@@ -84,8 +92,6 @@ class ApiService {
         throw new Error(result.message || 'Login failed');
       }
 
-      // --- PERBAIKAN DI SINI ---
-      // 1. Cek 'result.data.access_token' (bukan 'token')
       const token = result.data?.access_token;
 
       if (token) {
@@ -107,11 +113,9 @@ class ApiService {
             token: token
           }
         };
-
       } else {
         throw new Error('Login response missing token');
       }
-
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -175,6 +179,13 @@ class ApiService {
     }
   }
 
+  async getBookStats(): Promise<BookStats> {
+    const result = await this.get('books/stats');
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to fetch book stats');
+    }
+    return result.data;
+  }
 }
 
 export const apiService = new ApiService();

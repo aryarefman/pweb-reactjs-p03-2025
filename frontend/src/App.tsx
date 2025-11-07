@@ -5,8 +5,8 @@ import { AuthProvider } from './context/AuthContext';  // ← tambah ini
 import { useAuth } from './context/useAuth';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Book';
-import BooksList from './pages/Booklist';
+import Dashboard from './pages/Dashboard';
+import BooksList from './pages/Book';
 import TransactionsList from './pages/Transaction';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

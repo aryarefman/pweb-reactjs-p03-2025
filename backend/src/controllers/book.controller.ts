@@ -830,8 +830,7 @@ export const updateBook = async (req: Request, res: Response) => {
     }
 
     const sanitizedData: any = {};
-    
-    // Only include fields that are actually different from current data
+
     if (updateData.title !== undefined) {
       const trimmedTitle = updateData.title.trim();
       if (trimmedTitle !== book.title) {
@@ -879,7 +878,6 @@ export const updateBook = async (req: Request, res: Response) => {
       sanitizedData.genre_id = updateData.genre_id;
     }
 
-    // If no fields have changed, return error
     if (Object.keys(sanitizedData).length === 0) {
       return res.status(400).json({
         success: false,
@@ -948,6 +946,41 @@ export const deleteBook = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('DeleteBook error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+export const getBookStats = async (req: Request, res: Response) => {
+  try {
+    const [totalBooks, inStock, genres] = await Promise.all([
+      prisma.book.count({
+        where: { deleted_at: null }
+      }),
+      prisma.book.count({
+        where: {
+          deleted_at: null,
+          stock_quantity: { gt: 0 }
+        }
+      }),
+      prisma.genre.count({
+        where: { deleted_at: null }
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Book statistics retrieved successfully',
+      data: {
+        totalBooks,
+        inStock,
+        genres
+      }
+    });
+  } catch (error) {
+    console.error('GetBookStats error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error'

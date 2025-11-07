@@ -1,17 +1,39 @@
+import { useEffect, useState } from 'react';
+import { apiService } from '../services/api';
 import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import {
+  BookOpen,
+  Home,
+  Package,
+  LogOut,
+  Moon,
+  Sun,
+  User,
+} from 'lucide-react';
 import './Book.css';
 
-export default function Dashboard() {
+interface Book {
+  id: string;
+  title: string;
+  writer: string;
+  price: number;
+  stock: number;
+}
+
+function BooksList() {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const saved = (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
+    setTheme(saved);
+    document.documentElement.setAttribute('data-theme', saved);
   }, []);
 
   const toggleTheme = () => {
@@ -26,194 +48,119 @@ export default function Dashboard() {
     navigate('/login');
   };
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await apiService.get('books');
+
+        if (response.success) {
+          setBooks(response.data);
+        } else {
+          throw new Error(response.message || 'Gagal memuat data buku');
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  let content: React.ReactNode;
+  if (loading) {
+    content = <div className="loading-state">Memuat data buku...</div>;
+  } else if (error) {
+    content = <div className="error-state">Error: {error}</div>;
+  } else if (books.length === 0) {
+    content = <div className="empty-state">Belum ada buku yang tersedia.</div>;
+  } else {
+    content = (
+      <div className="books-grid">
+        {books.map((book) => (
+          <div
+            key={book.id}
+            className="book-card"
+            onClick={() => navigate(`/books/${book.id}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div className="book-image-wrapper">
+              <BookOpen
+                size={48}
+                strokeWidth={1.8}
+                color={theme === 'dark' ? '#f5f5f5' : '#333'}
+              />
+            </div>
+            <div className="book-content">
+              <h3 className="book-title">{book.title}</h3>
+              <div className="book-writer">{book.writer}</div>
+              <div className="book-meta">
+                <div className="meta-badge price">
+                  Rp {book.price.toLocaleString('id-ID')}
+                </div>
+                <div className="meta-badge stock">{book.stock} in stock</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Navbar */}
       <nav className="navbar">
         <div className="nav-container">
           <a href="/" className="nav-brand">
-            <span className="brand-icon">📚</span>
-            BookStore
+            <BookOpen size={28} />
+            <span style={{ marginLeft: 8 }}>BookStore</span>
           </a>
+
           <div className="nav-links">
-            <a href="/" className="nav-link active">
-              <span>🏠</span> Dashboard
+            <a href="/dashboard" className="nav-link">
+              <Home size={20} />
+              <span style={{ marginLeft: 6 }}>Dashboard</span>
             </a>
-            <a href="/books" className="nav-link">
-              <span>📖</span> Books
+            <a href="/books" className="nav-link active">
+              <BookOpen size={20} />
+              <span style={{ marginLeft: 6 }}>Books</span>
+            </a>
+            <a href="/transactions" className="nav-link">
+              <Package size={20} />
+              <span style={{ marginLeft: 6 }}>Transactions</span>
             </a>
           </div>
+
           <div className="nav-user">
             <div className="user-info">
-              <span className="user-icon">👤</span>
-              <span id="userName">{user?.username}</span>
+              <User size={20} />
+              <span id="userName" style={{ marginLeft: 6 }}>
+                {user?.username || 'User'}
+              </span>
             </div>
             <button onClick={toggleTheme} className="btn-theme-toggle">
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
             <button onClick={handleLogout} className="btn-logout">
-              Logout
+              <LogOut size={20} />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="hero-section">
+      <div className="books-container" style={{ paddingTop: 20 }}>
         <div className="page-header">
-          <h1>Welcome Back! 👋</h1>
-          <p>Your Personal Dashboard</p>
+          <h1>Daftar Buku</h1>
+          <p>Semua buku yang tersedia di perpustakaan.</p>
         </div>
-      </section>
-
-      {/* Dashboard Content */}
-      <div className="books-container" style={{ paddingTop: '20px' }}>
-        <div className="books-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
-          
-          {/* Welcome Card */}
-          <div className="book-card" style={{ cursor: 'default' }}>
-            <div className="book-image-wrapper" style={{ 
-              background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '80px'
-            }}>
-              👤
-            </div>
-            <div className="book-content">
-              <h3 className="book-title">Welcome, {user?.username}!</h3>
-              <div className="book-writer">Account Information</div>
-              <div className="book-meta" style={{ flexDirection: 'column', gap: '8px' }}>
-                <div className="meta-badge" style={{ 
-                  background: 'var(--card-hover)', 
-                  color: 'var(--text-primary)',
-                  width: '100%',
-                  justifyContent: 'flex-start'
-                }}>
-                  📧 {user?.email}
-                </div>
-                <div className="meta-badge" style={{ 
-                  background: 'var(--card-hover)', 
-                  color: 'var(--text-primary)',
-                  width: '100%',
-                  justifyContent: 'flex-start'
-                }}>
-                  🆔 User ID: {user?.id}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Status Card */}
-          <div className="book-card" style={{ cursor: 'default' }}>
-            <div className="book-image-wrapper" style={{ 
-              background: 'linear-gradient(135deg, var(--success-color) 0%, #229954 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '80px'
-            }}>
-              ✅
-            </div>
-            <div className="book-content">
-              <h3 className="book-title">Account Status</h3>
-              <div className="book-writer">Active & Verified</div>
-              <div className="book-meta">
-                <div className="meta-badge" style={{ background: 'var(--success-color)', color: 'white' }}>
-                  ✓ Authenticated
-                </div>
-                <div className="meta-badge" style={{ background: 'var(--accent-color)', color: 'white' }}>
-                  ✓ Protected
-                </div>
-              </div>
-              <p style={{ 
-                marginTop: '12px', 
-                fontSize: '14px', 
-                color: 'var(--text-secondary)',
-                lineHeight: '1.6'
-              }}>
-                You are successfully logged in and have access to all protected features of the application.
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Actions Card */}
-          <div className="book-card" style={{ cursor: 'default' }}>
-            <div className="book-image-wrapper" style={{ 
-              background: 'linear-gradient(135deg, var(--accent-color) 0%, #3498db 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '80px'
-            }}>
-              ⚡
-            </div>
-            <div className="book-content">
-              <h3 className="book-title">Quick Actions</h3>
-              <div className="book-writer">Manage Your Library</div>
-              <div className="book-actions" style={{ flexDirection: 'column', marginTop: '16px' }}>
-                <button 
-                  onClick={() => navigate('/books')} 
-                  className="btn-view"
-                  style={{ width: '100%' }}
-                >
-                  📚 Browse Books
-                </button>
-                <button 
-                  onClick={() => navigate('/books/add')} 
-                  className="btn-view"
-                  style={{ width: '100%', background: 'var(--success-color)' }}
-                >
-                  ➕ Add New Book
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics Card */}
-          <div className="book-card" style={{ cursor: 'default' }}>
-            <div className="book-image-wrapper" style={{ 
-              background: 'linear-gradient(135deg, var(--secondary-color) 0%, #6d5d3a 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '80px'
-            }}>
-              📊
-            </div>
-            <div className="book-content">
-              <h3 className="book-title">Library Statistics</h3>
-              <div className="book-writer">Your Collection Overview</div>
-              <div className="book-meta" style={{ flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                <div className="meta-badge price" style={{ width: '100%', justifyContent: 'space-between' }}>
-                  <span>Total Books</span>
-                  <span style={{ fontWeight: '700' }}>-</span>
-                </div>
-                <div className="meta-badge stock" style={{ width: '100%', justifyContent: 'space-between' }}>
-                  <span>In Stock</span>
-                  <span style={{ fontWeight: '700' }}>-</span>
-                </div>
-                <div className="meta-badge condition" style={{ width: '100%', justifyContent: 'space-between' }}>
-                  <span>Genres</span>
-                  <span style={{ fontWeight: '700' }}>-</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Footer Info */}
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '40px 20px',
-        color: 'var(--text-muted)',
-        fontSize: '14px'
-      }}>
-        <p>© 2025 BookStore. All rights reserved.</p>
+        {content}
       </div>
     </div>
   );
 }
+
+export default BooksList;
