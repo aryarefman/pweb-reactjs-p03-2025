@@ -1,6 +1,4 @@
-// src/services/api.ts
-
-const BASE_URL = 'http://localhost:3000'; // Ganti dengan URL backend Anda
+const BASE_URL = 'http://localhost:3000'; 
 
 export interface RegisterData {
   username: string;
@@ -25,6 +23,13 @@ export interface AuthResponse {
     };
     token: string;
   };
+}
+function parseJwt(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
 }
 
 class ApiService {
@@ -79,13 +84,34 @@ class ApiService {
         throw new Error(result.message || 'Login failed');
       }
 
-      // Simpan token ke localStorage
-      if (result.data?.token) {
-        localStorage.setItem('token', result.data.token);
-        localStorage.setItem('user', JSON.stringify(result.data.user));
+      // --- PERBAIKAN DI SINI ---
+      // 1. Cek 'result.data.access_token' (bukan 'token')
+      const token = result.data?.access_token;
+
+      if (token) {
+        localStorage.setItem('token', token);
+
+        const userData = parseJwt(token); 
+        
+        const user = {
+          id: userData.id,
+          email: userData.email,
+          username: userData.username || 'User' 
+        };
+        localStorage.setItem('user', JSON.stringify(user));
+
+        return {
+          ...result,
+          data: {
+            user: user,
+            token: token
+          }
+        };
+
+      } else {
+        throw new Error('Login response missing token');
       }
 
-      return result;
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -111,6 +137,44 @@ class ApiService {
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
+
+  private _getAuthHeaders(): HeadersInit {
+    const token = this.getToken(); 
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
+  async get(endpoint: string) {
+    try {
+      const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+        method: 'GET',
+        headers: this._getAuthHeaders(), 
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          this.logout();
+          window.location.reload();
+        }
+        throw new Error(result.message || 'Failed to fetch data');
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unexpected error occurred');
+    }
+  }
+
 }
 
 export const apiService = new ApiService();

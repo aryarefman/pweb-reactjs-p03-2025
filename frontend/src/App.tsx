@@ -6,10 +6,19 @@ import { useAuth } from './context/useAuth';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Book';
+import BooksList from './pages/Booklist';
 
-// Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth(); // <-- 1. Ambil 'loading'
+
+  // 2. Cek 'loading' DULU
+  if (loading) {
+    // Tampilkan layar loading selagi AuthContext memeriksa localStorage
+    return <div>Loading session...</div>;
+  }
+
+  // 3. Sekarang 'loading' selesai, kita bisa dengan aman
+  //    memeriksa 'isAuthenticated'
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -44,6 +53,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/books"
+        element={
+          <ProtectedRoute>
+            <BooksList />
           </ProtectedRoute>
         }
       />
